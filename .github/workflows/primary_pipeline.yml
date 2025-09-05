@@ -7,6 +7,16 @@ on:
             description: 'Name of the Docker image to build'
             required: true
             type: string
+        testing_platform:
+          type: string  
+          description: "Platforms for testing the container"
+          default: "linux/amd64"
+          required: true
+        platforms:
+          type: string  
+          description: "Platforms for which to build the container"
+          default: "linux/arm/v7,linux/arm64/v8,linux/amd64"
+          required: true
     secrets:
         DOCKERHUB_USERNAME:
             description: 'Username for Docker Hub'
@@ -110,7 +120,7 @@ jobs:
           context: .
           push: true
           tags: ${{ env.IMAGE_NAME }}:build
-          platforms: linux/amd64
+          platforms: ${{ inputs.testing_platform }}
           secrets: GIT_AUTH_TOKEN=${{ secrets.GH_PAT }}
  
   build-and-push-main:
@@ -154,5 +164,5 @@ jobs:
           context: .
           push: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
           tags: ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.datetag }}, ${{ env.IMAGE_NAME }}:latest
-          platforms: linux/arm/v7,linux/arm64/v8,linux/amd64
+          platforms: ${{ inputs.platforms }}
           secrets: GIT_AUTH_TOKEN=${{ secrets.GH_PAT }}
