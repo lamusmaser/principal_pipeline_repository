@@ -11,12 +11,12 @@ on:
           type: string  
           description: "Platforms for testing the container"
           default: "linux/amd64"
-          required: true
+          required: false
         platforms:
           type: string  
           description: "Platforms for which to build the container"
           default: "linux/arm/v7,linux/arm64/v8,linux/amd64"
-          required: true
+          required: false
     secrets:
         DOCKERHUB_USERNAME:
             description: 'Username for Docker Hub'
