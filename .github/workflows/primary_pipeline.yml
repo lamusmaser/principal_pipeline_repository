@@ -1,168 +1,21 @@
-name: Primary Docker Image CI
+name: Docker Image CI
 
 on:
-  workflow_call:
-    inputs:
-        image_name:
-            description: 'Name of the Docker image to build'
-            required: true
-            type: string
-        testing_platform:
-          type: string  
-          description: "Platforms for testing the container"
-          default: "linux/amd64"
-          required: false
-        platforms:
-          type: string  
-          description: "Platforms for which to build the container"
-          default: "linux/arm/v7,linux/arm64/v8,linux/amd64"
-          required: false
-    secrets:
-        DOCKERHUB_USERNAME:
-            description: 'Username for Docker Hub'
-            required: true
-        DOCKERHUB_PASSWORD:
-            description: 'Password for Docker Hub'
-        GH_USERNAME:
-            description: 'Username for GitHub Packages'
-            required: true
-        GH_PAT:
-            description: 'Personal Access Token for GitHub Packages'
-            required: true
-
-env:
-  REGISTRY_DH: docker.io
-  REGISTRY_GH: ghcr.io
-  IMAGE_NAME: ${{ inputs.image_name }}
+    workflow_call:
+        inputs:
+            image_name:
+                description: 'Name of the Docker image to build'
+                required: true
+                type: string
+            platforms:
+                description: 'Platforms for which to build the container'
+                required: false
+                type: string
+                default: 'linux/arm64/v8,linux/amd64'    
 
 jobs:
-  lint-python:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5 # Does not work on ARM, just use the base setup.
-        with:
-          python-version: '3.8' #Should match the version provided for Docker image.
-      - run: pip3 install --upgrade pip wheel
-      - run: pip3 install bandit black codespell flake8 flake8-bugbear flake8-comprehensions isort
-      - run: black --check --diff --line-length 79 .
-      - run: codespell -S ./.git
-      - run: flake8 . --count --max-complexity=10 --max-line-length=79 --show-source --statistics
-      - run: isort --check-only --line-length 79 --profile black .
-      - name: Security Check - Bandit
-        run: |
-          # Security check using Bandit
-          touch security_report.txt
-          set +e
-          bandit -r . -o security_report.txt -f 'txt'
-          EXIT_CODE=$?
-          set -e
-          if [ $EXIT_CODE -eq 0 ]; then
-            echo "Security check passed."
-          else
-            echo "Security check failed."
-            cat security_report.txt
-          fi
-          exit $EXIT_CODE
-      - name: Security check report artifacts
-        uses: actions/upload-artifact@v4
-        if: success() || failure()
-        with:
-          name: Security report
-          path: security_report.txt
-      - name: Print GitHub Action details
-        env:
-          EVENT_NAME: ${{ toJSON(github.event_name) }}
-          EVENT_CONTEXT: ${{ toJSON(github.event) }}
-          GH_REF: ${{ toJSON(github.ref) }}
-        run: |
-          echo $EVENT_NAME
-          echo $EVENT_CONTEXT
-          echo $GH_REF
-
-  build:
-    needs: lint-python
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      # This is used to complete the identity challenge
-      # with sigstore/fulcio when running outside of PRs.
-      id-token: write
-
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-
-    - name: Install/Config Buildx
-      id: buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Log into registry (Docker)
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY_DH }}
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Log into registry (GitHub)
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY_GH }}
-        username: ${{ secrets.GH_USERNAME }}
-        password: ${{ secrets.GH_PAT }}
-
-    - name: Build and push Docker image - build tag
-      id: build-and-push
-      uses: docker/build-push-action@v6
-      with:
-          context: .
-          push: true
-          tags: ${{ env.IMAGE_NAME }}:build
-          platforms: ${{ inputs.testing_platform }}
-          secrets: GIT_AUTH_TOKEN=${{ secrets.GH_PAT }}
- 
-  build-and-push-main:
-    needs: [build]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-
-    steps:
-    - uses: actions/checkout@v4
-    - name: Generate datetag
-      id: meta
-      run: |
-        echo "datetag=$(date +%y.%m.%d)" >> $GITHUB_OUTPUT
-
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-
-    - name: Install/Config Buildx
-      id: buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Log into registry (Docker)
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY_DH }}
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Log into registry (GitHub)
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY_GH }}
-        username: ${{ secrets.GH_USERNAME }}
-        password: ${{ secrets.GH_PAT }}
-
-    - name: Build and push Docker image - latest tag
-      if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-      id: build-and-push
-      uses: docker/build-push-action@v6
-      with:
-          context: .
-          push: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
-          tags: ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.datetag }}, ${{ env.IMAGE_NAME }}:latest
-          platforms: ${{ inputs.platforms }}
-          secrets: GIT_AUTH_TOKEN=${{ secrets.GH_PAT }}
+    primary_pipeline_python_checker:
+        uses: lamusmaser/principal_container_builder_pipeline/.github/workflows/python_checker.yml@main
+    primary_pipeline_container_builder:
+        needs: primary_pipeline_python_checker
+        uses: lamusmaser/principal_container_builder_pipeline/.github/workflows/container_builder.yml@main

@@ -1,0 +1,54 @@
+name: Python Checker Pipeline
+
+on:
+  workflow_call:
+    inputs:
+        image_name:
+            description: 'Name of the Docker image to build'
+            required: true
+            type: string
+
+jobs:
+  lint-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5 # Does not work on ARM, just use the base setup.
+        with:
+          python-version: '3.8' #Should match the version provided for Docker image.
+      - run: pip3 install --upgrade pip wheel
+      - run: pip3 install bandit black codespell flake8 flake8-bugbear flake8-comprehensions isort
+      - run: black --check --diff --line-length 79 .
+      - run: codespell -S ./.git
+      - run: flake8 . --count --max-complexity=10 --max-line-length=79 --show-source --statistics
+      - run: isort --check-only --line-length 79 --profile black .
+      - name: Security Check - Bandit
+        run: |
+          # Security check using Bandit
+          touch security_report.txt
+          set +e
+          bandit -r . -o security_report.txt -f 'txt'
+          EXIT_CODE=$?
+          set -e
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "Security check passed."
+          else
+            echo "Security check failed."
+            cat security_report.txt
+          fi
+          exit $EXIT_CODE
+      - name: Security check report artifacts
+        uses: actions/upload-artifact@v4
+        if: success() || failure()
+        with:
+          name: Security report
+          path: security_report.txt
+      - name: Print GitHub Action details
+        env:
+          EVENT_NAME: ${{ toJSON(github.event_name) }}
+          EVENT_CONTEXT: ${{ toJSON(github.event) }}
+          GH_REF: ${{ toJSON(github.ref) }}
+        run: |
+          echo $EVENT_NAME
+          echo $EVENT_CONTEXT
+          echo $GH_REF
