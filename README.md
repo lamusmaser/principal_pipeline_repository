@@ -28,5 +28,10 @@ Note: The registries are defined as environment variables in the pipeline:
 
 ## Python Checker Pipeline
 Checks and validates Python code. Performs the following actions:
-- Linting (black, codespell, flake8, isort)
+- Linting
+    - black
+    - codespell
+    - flake8
+    - isort
 - Security checks
+    - bandit
