@@ -11,7 +11,19 @@ on:
                 description: 'Platforms for which to build the container'
                 required: false
                 type: string
-                default: 'linux/arm64/v8,linux/amd64'    
+                default: 'linux/arm64/v8,linux/amd64'
+        secrets:
+            DOCKERHUB_USERNAME:
+                description: 'Username for Docker Hub'
+                required: true
+            DOCKERHUB_PASSWORD:
+                description: 'Password for Docker Hub'
+            GH_USERNAME:
+                description: 'Username for GitHub Packages'
+                required: true
+            GH_PAT:
+                description: 'Personal Access Token for GitHub Packages'
+                required: true
 
 jobs:
     primary_pipeline_python_checker:
