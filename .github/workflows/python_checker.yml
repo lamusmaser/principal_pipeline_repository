@@ -28,7 +28,11 @@ jobs:
           REPORT_FILE="security_report_${{ github.run_id }}_${{ github.run_number }}.txt"
           touch ${REPORT_FILE}
           set +e
-          bandit -r . -o ${REPORT_FILE} -f 'txt'
+          if [ -f .bandit ]; then
+            bandit -r . -o ${REPORT_FILE} -f 'txt' -c .bandit
+          else
+            bandit -r . -o ${REPORT_FILE} -f 'txt'
+          fi
           EXIT_CODE=$?
           set -e
           if [ $EXIT_CODE -eq 0 ]; then
