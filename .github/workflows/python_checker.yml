@@ -29,8 +29,8 @@ jobs:
           REPORT_FILE="security_report_${{ github.run_id }}_${{ github.run_number }}.txt"
           touch ${REPORT_FILE}
           set +e
-          if [ -f .bandit ]; then
-            bandit -r . -o ${REPORT_FILE} -f 'txt' -c .bandit
+          if [ -f bandit.yaml ]; then
+            bandit -r . -o ${REPORT_FILE} -f 'txt' -c bandit.yaml
           else
             bandit -r . -o ${REPORT_FILE} -f 'txt'
           fi
