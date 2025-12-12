@@ -25,24 +25,26 @@ jobs:
       - name: Security Check - Bandit
         run: |
           # Security check using Bandit
-          touch security_report.txt
+          REPORT_FILE="security_report_${{ github.run_id }}_${{ github.run_number }}.txt"
+          touch ${REPORT_FILE}
           set +e
-          bandit -r . -o security_report.txt -f 'txt'
+          bandit -r . -o ${REPORT_FILE} -f 'txt'
           EXIT_CODE=$?
           set -e
           if [ $EXIT_CODE -eq 0 ]; then
             echo "Security check passed."
           else
             echo "Security check failed."
-            cat security_report.txt
+            cat ${REPORT_FILE}
           fi
+          echo "report_file=$REPORT_FILE" >> $GITHUB_OUTPUT
           exit $EXIT_CODE
       - name: Security check report artifacts
         uses: actions/upload-artifact@v4
         if: success() || failure()
         with:
-          name: Security report
-          path: security_report.txt
+          name: Security report - ${{ github.run_id }}-${{ github.run_number }}
+          path: ${REPORT_FILE}
       - name: Print GitHub Action details
         env:
           EVENT_NAME: ${{ toJSON(github.event_name) }}
