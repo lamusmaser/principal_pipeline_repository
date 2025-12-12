@@ -23,6 +23,7 @@ jobs:
       - run: flake8 . --count --max-complexity=10 --max-line-length=79 --show-source --statistics
       - run: isort --check-only --line-length 79 --profile black .
       - name: Security Check - Bandit
+        id: security-check-bandit
         run: |
           # Security check using Bandit
           REPORT_FILE="security_report_${{ github.run_id }}_${{ github.run_number }}.txt"
@@ -48,7 +49,7 @@ jobs:
         if: success() || failure()
         with:
           name: Security report - ${{ github.run_id }}-${{ github.run_number }}
-          path: ${REPORT_FILE}
+          path: ${{ steps.security-check-bandit.outputs.report_file }}
       - name: Print GitHub Action details
         env:
           EVENT_NAME: ${{ toJSON(github.event_name) }}
