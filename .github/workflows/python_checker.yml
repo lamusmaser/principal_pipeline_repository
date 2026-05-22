@@ -12,8 +12,8 @@ jobs:
   lint-python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5 # Does not work on ARM, just use the base setup.
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6 # Does not work on ARM, just use the base setup.
         with:
           python-version: '3.8' #Should match the version provided for Docker image.
       - run: pip3 install --upgrade pip wheel
@@ -45,7 +45,7 @@ jobs:
           echo "report_file=$REPORT_FILE" >> $GITHUB_OUTPUT
           exit $EXIT_CODE
       - name: Security check report artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: success() || failure()
         with:
           name: Security report - ${{ github.run_id }}-${{ github.run_number }}
