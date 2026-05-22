@@ -24,6 +24,7 @@ jobs:
       - run: isort --check-only --line-length 79 --profile black .
       - name: Security Check - Bandit
         id: security-check-bandit
+        if: success() || failure()
         run: |
           # Security check using Bandit
           REPORT_FILE="security_report_${{ github.run_id }}_${{ github.run_number }}.txt"
