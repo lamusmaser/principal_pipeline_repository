@@ -12,8 +12,8 @@ jobs:
   lint-python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6 # Does not work on ARM, just use the base setup.
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7 # Does not work on ARM, just use the base setup.
         with:
           python-version: '3.8' #Should match the version provided for Docker image.
       - run: pip3 install --upgrade pip wheel
