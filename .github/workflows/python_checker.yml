@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7 # Does not work on ARM, just use the base setup.
         with:
-          python-version: '3.8' #Should match the version provided for Docker image.
+          python-version: '3.11' #Should match the version provided for Docker image.
       - run: pip3 install --upgrade pip wheel
       - run: pip3 install bandit black codespell flake8 flake8-bugbear flake8-comprehensions isort
       - run: black --check --diff --line-length 79 .
